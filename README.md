@@ -3,6 +3,8 @@
 A simple, fast desktop app for converting images to WebP on macOS (Apple Silicon).
 Packaged as a native `.app` and easy-to-install `.dmg`.
 
+<img width="1280" height="640" alt="bulk-media-optimizer-poster" src="https://github.com/user-attachments/assets/8a1f91bd-27c8-4b25-adb1-a3f6673f42f9" />
+
 ---
 
 ## 🚀 Build the App
