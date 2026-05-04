@@ -1,41 +1,62 @@
-# WebP Converter (macOS, Apple Silicon)
+# 🖼️ WebP Converter (macOS • Apple Silicon)
 
-This project packages `convert_to_webp.py` as a native `.app` and `.dmg` for macOS Apple Silicon.
+A simple, fast desktop app for converting images to WebP on macOS (Apple Silicon).
+Packaged as a native `.app` and easy-to-install `.dmg`.
 
-## 1) Build the app
+---
+
+## 🚀 Build the App
+
+Run the following command:
 
 ```bash
 ./scripts/build_app.sh
 ```
 
-Output app:
+Once it finishes, you’ll find the app here:
 
-- `dist/WebP Converter.app`
+```
+dist/WebP Converter.app
+```
 
-## 2) Build the DMG
+---
+
+## 📦 Create the Installer (.DMG)
+
+To package the app for distribution:
 
 ```bash
 ./scripts/make_dmg.sh
 ```
 
-Output DMG:
+Output file:
 
-- `dist/WebP-Converter-apple-silicon.dmg`
+```
+dist/WebP-Converter-apple-silicon.dmg
+```
 
-## Native feel and speed notes
+---
 
-- Uses macOS Aqua Tk theme via system Tk.
-- Built as `arm64` for Apple Silicon.
-- Processing runs in a worker thread, so UI remains responsive.
-- If you want an even more native look later, the next step is a SwiftUI front-end with the same conversion logic.
+## ⚡ Performance & Experience
 
-## Optional: code signing and notarization (for smoother install)
+* Native macOS look using the Aqua Tk theme
+* Built specifically for Apple Silicon (`arm64`)
+* Smooth, responsive UI (conversion runs in the background)
+* Lightweight and fast for bulk image processing
 
-After you have an Apple Developer account:
+💡 *Future upgrade:* A SwiftUI interface for a fully native macOS experience.
 
-1. Sign the app
-2. Sign the DMG
-3. Notarize with `notarytool`
-4. Staple notarization ticket
+---
 
-I can add a one-command notarization script when you're ready.
+## 🔐 Optional: Code Signing & Notarization
+
+If you plan to distribute the app, Apple recommends signing and notarizing it.
+
+Steps:
+
+1. Sign the `.app`
+2. Sign the `.dmg`
+3. Notarize using `notarytool`
+4. Staple the notarization ticket
+
+👉 I can help you automate this into a one-command script when you're ready.
