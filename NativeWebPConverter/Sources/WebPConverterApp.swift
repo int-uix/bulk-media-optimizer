@@ -65,6 +65,7 @@ struct ContentView: View {
             }
             .formStyle(.grouped)
             .navigationTitle("WebP Converter")
+            .navigationSplitViewColumnWidth(min: 280, ideal: 340)
         } detail: {
             VStack(alignment: .leading, spacing: 12) {
                 Text(model.statusText)

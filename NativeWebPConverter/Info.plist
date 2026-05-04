@@ -8,6 +8,8 @@
     <string>WebP Converter</string>
     <key>CFBundleIdentifier</key>
     <string>com.yourname.webpconverter.native</string>
+    <key>CFBundleIconFile</key>
+    <string>AppIcon</string>
     <key>CFBundleName</key>
     <string>WebP Converter</string>
     <key>CFBundleShortVersionString</key>

@@ -20,23 +20,21 @@ enum ConversionEvent {
 
 enum Converter {
     private static let imageExts: Set<String> = ["jpg", "jpeg", "png", "bmp", "tif", "tiff", "gif", "webp"]
-    private static let videoExts: Set<String> = ["mp4", "mov", "avi", "mkv"]
 
     static func run(config: ConversionConfig, onEvent: @escaping @MainActor (ConversionEvent) -> Void) async throws {
         try FileManager.default.createDirectory(at: config.destination, withIntermediateDirectories: true)
 
         let allFiles = collectFiles(in: config.source)
-            .filter { isImage($0) || isVideo($0) }
 
         if allFiles.isEmpty {
-            await onEvent(.log("No images or videos found."))
+            await onEvent(.log("No files found."))
             await onEvent(.progress(done: 0, total: 1, status: "No files found"))
             return
         }
 
         var converted = 0
         var copiedWebp = 0
-        var copiedVideos = 0
+        var copiedOther = 0
         var errors = 0
         var indexed: [(String, String)] = []
 
@@ -48,11 +46,7 @@ enum Converter {
                 let rel = file.path.replacingOccurrences(of: config.source.path + "/", with: "")
                 let dst = config.destination.appendingPathComponent(rel)
 
-                if isVideo(file) {
-                    try copyFile(file, to: dst)
-                    copiedVideos += 1
-                    await onEvent(.log("VIDEO copied: \(file.lastPathComponent)"))
-                } else if isImage(file) {
+                if isImage(file) {
                     if file.pathExtension.lowercased() == "webp" {
                         try copyFile(file, to: dst)
                         copiedWebp += 1
@@ -69,6 +63,11 @@ enum Converter {
                             indexed.append((dstWebp.deletingPathExtension().lastPathComponent, indexPath(for: dstWebp, config: config)))
                         }
                     }
+                } else {
+                    // Copy all non-image files as-is (.pdf, .docx, videos, etc.)
+                    try copyFile(file, to: dst)
+                    copiedOther += 1
+                    await onEvent(.log("FILE copied: \(file.lastPathComponent)"))
                 }
             } catch {
                 errors += 1
@@ -76,7 +75,7 @@ enum Converter {
             }
 
             let done = idx + 1
-            let status = "Processed \(done)/\(allFiles.count)  images:\(converted) webp:\(copiedWebp) videos:\(copiedVideos) errors:\(errors)"
+            let status = "Processed \(done)/\(allFiles.count)  images:\(converted) webp:\(copiedWebp) files:\(copiedOther) errors:\(errors)"
             await onEvent(.progress(done: done, total: allFiles.count, status: status))
         }
 
@@ -86,7 +85,7 @@ enum Converter {
             await onEvent(.log("XLSX saved: \(xlsx.path)"))
         }
 
-        let summary = "Done. Converted: \(converted), WEBP copied: \(copiedWebp), videos: \(copiedVideos), errors: \(errors)"
+        let summary = "Done. Converted: \(converted), WEBP copied: \(copiedWebp), files copied: \(copiedOther), errors: \(errors)"
         await onEvent(.finished(summary))
     }
 
@@ -105,8 +104,6 @@ enum Converter {
     }
 
     private static func isImage(_ url: URL) -> Bool { imageExts.contains(url.pathExtension.lowercased()) }
-    private static func isVideo(_ url: URL) -> Bool { videoExts.contains(url.pathExtension.lowercased()) }
-
     private static func copyFile(_ src: URL, to dst: URL) throws {
         try FileManager.default.createDirectory(at: dst.deletingLastPathComponent(), withIntermediateDirectories: true)
         if FileManager.default.fileExists(atPath: dst.path) {
