@@ -136,7 +136,8 @@ enum Converter {
         try FileManager.default.createDirectory(at: destination.deletingLastPathComponent(), withIntermediateDirectories: true)
 
         guard let dest = CGImageDestinationCreateWithURL(destination as CFURL, UTType.webP.identifier as CFString, 1, nil) else {
-            throw NSError(domain: "WebPConverter", code: 3, userInfo: [NSLocalizedDescriptionKey: "Cannot create WEBP destination"]) 
+            try convertWithSips(source: source, destination: destination, maxWidth: maxWidth)
+            return
         }
 
         var props: [CFString: Any] = [
@@ -151,7 +152,26 @@ enum Converter {
 
         CGImageDestinationAddImage(dest, cgImage, props as CFDictionary)
         guard CGImageDestinationFinalize(dest) else {
-            throw NSError(domain: "WebPConverter", code: 4, userInfo: [NSLocalizedDescriptionKey: "Failed to write WEBP"]) 
+            try convertWithSips(source: source, destination: destination, maxWidth: maxWidth)
+            return
+        }
+    }
+
+    private static func convertWithSips(source: URL, destination: URL, maxWidth: Int?) throws {
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/usr/bin/sips")
+
+        var args = ["-s", "format", "webp", source.path]
+        if let maxWidth, maxWidth > 0 {
+            args += ["--resampleWidth", String(maxWidth)]
+        }
+        args += ["--out", destination.path]
+        process.arguments = args
+
+        try process.run()
+        process.waitUntilExit()
+        if process.terminationStatus != 0 {
+            throw NSError(domain: "WebPConverter", code: 6, userInfo: [NSLocalizedDescriptionKey: "Cannot create WEBP destination"]) 
         }
     }
 

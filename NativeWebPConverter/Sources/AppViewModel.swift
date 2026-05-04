@@ -147,6 +147,7 @@ final class AppViewModel: ObservableObject {
         panel.canChooseFiles = false
         panel.canChooseDirectories = true
         panel.allowsMultipleSelection = false
+        panel.canCreateDirectories = true
         return panel.runModal() == .OK ? panel.url : nil
     }
 
