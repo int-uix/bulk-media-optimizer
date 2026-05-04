@@ -1,0 +1,4 @@
+pillow
+openpyxl
+tkinterdnd2
+pyinstaller
