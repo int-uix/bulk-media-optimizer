@@ -136,7 +136,7 @@ enum Converter {
         try FileManager.default.createDirectory(at: destination.deletingLastPathComponent(), withIntermediateDirectories: true)
 
         guard let dest = CGImageDestinationCreateWithURL(destination as CFURL, UTType.webP.identifier as CFString, 1, nil) else {
-            try convertWithSips(source: source, destination: destination, maxWidth: maxWidth)
+            try convertWithExternalFallback(source: source, destination: destination, maxWidth: maxWidth)
             return
         }
 
@@ -152,9 +152,19 @@ enum Converter {
 
         CGImageDestinationAddImage(dest, cgImage, props as CFDictionary)
         guard CGImageDestinationFinalize(dest) else {
-            try convertWithSips(source: source, destination: destination, maxWidth: maxWidth)
+            try convertWithExternalFallback(source: source, destination: destination, maxWidth: maxWidth)
             return
         }
+    }
+
+    private static func convertWithExternalFallback(source: URL, destination: URL, maxWidth: Int?) throws {
+        do {
+            try convertWithSips(source: source, destination: destination, maxWidth: maxWidth)
+            return
+        } catch {
+            // Fall through to cwebp fallback.
+        }
+        try convertWithCWebP(source: source, destination: destination, maxWidth: maxWidth)
     }
 
     private static func convertWithSips(source: URL, destination: URL, maxWidth: Int?) throws {
@@ -171,7 +181,29 @@ enum Converter {
         try process.run()
         process.waitUntilExit()
         if process.terminationStatus != 0 {
-            throw NSError(domain: "WebPConverter", code: 6, userInfo: [NSLocalizedDescriptionKey: "Cannot create WEBP destination"]) 
+            throw NSError(domain: "WebPConverter", code: 6, userInfo: [NSLocalizedDescriptionKey: "sips WEBP encode failed"])
+        }
+    }
+
+    private static func convertWithCWebP(source: URL, destination: URL, maxWidth: Int?) throws {
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/opt/homebrew/bin/cwebp")
+
+        var args = ["-quiet", "-q", "85"]
+        if let maxWidth, maxWidth > 0 {
+            args += ["-resize", String(maxWidth), "0"]
+        }
+        args += [source.path, "-o", destination.path]
+        process.arguments = args
+
+        try process.run()
+        process.waitUntilExit()
+        if process.terminationStatus != 0 {
+            throw NSError(
+                domain: "WebPConverter",
+                code: 7,
+                userInfo: [NSLocalizedDescriptionKey: "Cannot create WEBP destination (ImageIO, sips, cwebp all failed)"]
+            )
         }
     }
 

@@ -97,6 +97,14 @@ struct ContentView: View {
             }
             .padding()
         }
+        .alert("Permission Required", isPresented: Binding(
+            get: { model.alertMessage != nil },
+            set: { if !$0 { model.alertMessage = nil } }
+        )) {
+            Button("OK", role: .cancel) { model.alertMessage = nil }
+        } message: {
+            Text(model.alertMessage ?? "")
+        }
     }
 
     @ViewBuilder

@@ -16,6 +16,7 @@ final class AppViewModel: ObservableObject {
     @Published var progressTotal: Double = 1
     @Published var logs: [String] = []
     @Published var isRunning: Bool = false
+    @Published var alertMessage: String?
 
     private var task: Task<Void, Never>?
 
@@ -91,6 +92,15 @@ final class AppViewModel: ObservableObject {
             return
         }
 
+        do {
+            try verifyAccess(source: src, destination: dst)
+        } catch {
+            let msg = "Permission issue: \(error.localizedDescription)\n\nOpen System Settings -> Privacy & Security -> Files and Folders (and Full Disk Access if needed), then allow access for WebP Converter."
+            appendLog(msg)
+            alertMessage = msg
+            return
+        }
+
         logs.removeAll()
         statusText = "Starting..."
         progressValue = 0
@@ -161,5 +171,28 @@ final class AppViewModel: ObservableObject {
             idx += 1
         }
         return candidate
+    }
+
+    private func verifyAccess(source: URL, destination: URL) throws {
+        let fm = FileManager.default
+
+        var isDir: ObjCBool = false
+        guard fm.fileExists(atPath: source.path, isDirectory: &isDir), isDir.boolValue else {
+            throw NSError(domain: "WebPConverter", code: 100, userInfo: [NSLocalizedDescriptionKey: "Source folder is not accessible."])
+        }
+
+        guard fm.isReadableFile(atPath: source.path) else {
+            throw NSError(domain: "WebPConverter", code: 101, userInfo: [NSLocalizedDescriptionKey: "No read access to source folder."])
+        }
+
+        try fm.createDirectory(at: destination, withIntermediateDirectories: true)
+        let probe = destination.appendingPathComponent(".permission_probe_\(UUID().uuidString)")
+        let data = Data("ok".utf8)
+        do {
+            try data.write(to: probe, options: .atomic)
+            try? fm.removeItem(at: probe)
+        } catch {
+            throw NSError(domain: "WebPConverter", code: 102, userInfo: [NSLocalizedDescriptionKey: "No write access to destination folder."])
+        }
     }
 }
